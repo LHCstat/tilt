@@ -1,0 +1,76 @@
+{
+  "version": "1.0.1",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 6003,
+      "sha256": "2f3b549e68a76237f65779a1775acc6fc2832db97fba49865819e6478c291645"
+    },
+    {
+      "path": "ni_octahedra.py",
+      "bytes": 19362,
+      "sha256": "67067c232481b6677bebd68c16ff6ad8227fec0bbefbd211b258d611150e0eb4"
+    },
+    {
+      "path": "run_local.py",
+      "bytes": 1879,
+      "sha256": "49863ed0f766a4132115aab37284ec2c4a756aa9265c7813827bf84d9554df0d"
+    },
+    {
+      "path": "test_ni_octahedra.py",
+      "bytes": 5194,
+      "sha256": "7abeaa8a0919ffaf1babacb2c484fec4a77c65a128b0a9a1fcdd3c4a918c1a07"
+    },
+    {
+      "path": "test_portability.py",
+      "bytes": 2324,
+      "sha256": "941186ef5eff2f5e0e0881922f94c3a25e781ab58355a86b02577460a72d3223"
+    },
+    {
+      "path": "requirements.txt",
+      "bytes": 58,
+      "sha256": "c96e8554f509c71ab2d3d0b814c980a14d54d7c0456d000699f6a789e0c0f3c0"
+    },
+    {
+      "path": "setup_windows.bat",
+      "bytes": 1128,
+      "sha256": "27aadfc8958f98849fd33ea6b7ebccd5eba0500ffae2d9e3e6eafc2e8a903666"
+    },
+    {
+      "path": "run_windows.bat",
+      "bytes": 373,
+      "sha256": "641108f88baab85aec892ca814dc99e3f3c486e197c30d6aaea22c368d880a24"
+    },
+    {
+      "path": "demo_windows.bat",
+      "bytes": 69,
+      "sha256": "0aa62294869f7984be65610cbd58b1e9a56c5d91c67c4fd4a17c11b43ee6603f"
+    },
+    {
+      "path": "docs/METHOD.md",
+      "bytes": 7475,
+      "sha256": "62e61d3e044e952df68b2a846215bde4238fa6ffe893d56fe6839382108319b8"
+    },
+    {
+      "path": "examples/POSCAR_rx8",
+      "bytes": 682,
+      "sha256": "d93599e832b561416969f970f63a873d405f6c5b34d44ddef923ce3622f9162d"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 58,
+      "sha256": "2879148d2ae41e6d4decde6c4a9cc4017ad69bf699c39b7dc846cda31a94d489"
+    },
+    {
+      "path": ".gitattributes",
+      "bytes": 97,
+      "sha256": "78d121b97e4e9078a0e533039b60b6e7f4053a08350d8b5e867ad5934fe57a6e"
+    },
+    {
+      "path": ".github/workflows/windows-tests.yml",
+      "bytes": 696,
+      "sha256": "bc0fe7873ef91aea16304843c9570e796a0d2704b989108dbf781fad31c5493e"
+    }
+  ],
+  "example": "Synthetic isolated NiO6, not a DFT result"
+}

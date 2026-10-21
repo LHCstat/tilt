@@ -1,4 +1,11 @@
 .venv/
+.runtime/
+data/
+validation/
+tmp/
+output/
+LOCAL_TEST_REPORT.md
+docs/REMOTE_DATA.md
 __pycache__/
 *.pyc
 results/

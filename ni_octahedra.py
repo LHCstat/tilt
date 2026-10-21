@@ -15,7 +15,7 @@ from ase.neighborlist import neighbor_list
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.transform import Rotation
 
-VERSION = '1.0.1'
+VERSION = '1.1.0'
 
 
 def unit(v):
@@ -273,30 +273,167 @@ def write_csv(path, rows, fallback_header):
             w.writerow({k:json.dumps(v,ensure_ascii=False) if isinstance(v,(list,dict)) else v for k,v in r.items()})
 
 
-def plot_projection(result, output):
+def projection_slices(result, plane, overlap_A=.6):
+    """Two periodic half-cell slabs, only when projected Ni centers overlap.
+
+    yz uses fractional a and xz uses fractional b. These are crystallographic
+    slabs, not exactly Cartesian depth slabs in a skew cell. Coordinates and
+    complete octahedra are preserved; only their Ni centers determine membership.
+    """
+    if plane not in ('yz', 'xz'):
+        raise ValueError("Projection plane must be 'yz' or 'xz'")
+    rows = result['octahedra']
+    if len(rows) < 2:
+        return None
+    hidden, horizontal = (0, 1) if plane == 'yz' else (1, 0)
+    frac = np.array([r['fractional_position'] for r in rows])
+    projected = (frac @ np.array(result['cell_A']) @
+                 np.array(result['frame_rows_cartesian']).T)[:, [horizontal, 2]]
+    pairs = [(i, j) for i, j in itertools.combinations(range(len(rows)), 2)
+             if np.linalg.norm(projected[i]-projected[j]) < overlap_A]
+    if not pairs:
+        return None
+    depth = frac[:, hidden] % 1.
+    # Both slab boundaries must avoid atoms. Modulo .5 reduces the two-boundary
+    # search to a single periodic gap search; all distinct partitions are tried.
+    folded = np.unique(depth % .5)
+    ends = np.r_[folded[1:], folded[0]+.5]
+    best = None
+    for left, right in zip(folded, ends):
+        start = float(((left+right)/2) % .5)
+        group = ((depth-start) % 1. >= .5).astype(int)
+        residual = [(i, j) for i, j in pairs if group[i] == group[j]]
+        score = (len(residual), -(right-left), abs(int(sum(group))*2-len(rows)), start)
+        if best is None or score < best[0]:
+            best = (score, start, group, residual)
+    _, start, group, residual = best
+    ni_pairs = lambda pairs: [[rows[i]['Ni_index_1based'], rows[j]['Ni_index_1based']]
+                              for i, j in pairs]
+    return {
+        'depth_fractional_axis': 'ab'[hidden],
+        'method': 'Periodic half-cell slabs; boundaries minimize residual Ni-center overlaps, then maximize clearance.',
+        'overlap_threshold_A': overlap_A,
+        'overlapping_pairs_before': ni_pairs(pairs),
+        'overlapping_pairs_after': ni_pairs(residual),
+        'warning': 'Two slices do not resolve every projected Ni-center overlap.' if residual else None,
+        'slices': [
+            {'slice': k+1, 'start_fraction': (start+.5*k) % 1.,
+             'width_fraction': .5,
+             'Ni_indices_1based': [r['Ni_index_1based'] for i, r in enumerate(rows) if group[i] == k]}
+            for k in range(2)
+        ],
+    }
+
+
+def plot_projection(result, output, plane='yz', slices=None):
+    """Project bonds and annotate apical-axis angles in the recorded layer frame."""
+    if plane not in ('yz', 'xz'):
+        raise ValueError("Projection plane must be 'yz' or 'xz'")
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    from matplotlib.colors import TwoSlopeNorm
-    from matplotlib.cm import ScalarMappable
+    from matplotlib.colors import TwoSlopeNorm, LinearSegmentedColormap
+    horizontal = 1 if plane == 'yz' else 0
+    angle_key = f'projected_cw_{plane}_deg'
     frame=np.array(result['frame_rows_cartesian']);cell=np.array(result['cell_A'])
-    fig, ax = plt.subplots(figsize=(6,9))
-    values=[r['orientation']['projected_cw_yz_deg'] for r in result['octahedra'] if r['orientation']]
+    panels = slices['slices'] if slices else [None]
+    fig, axes = plt.subplots(1, len(panels), figsize=(4.4*len(panels),9),
+                             sharex=True, sharey=True, squeeze=False)
+    values=[r['orientation'][angle_key] for r in result['octahedra'] if r['orientation']]
     limit=max(1.,max(map(abs,values),default=1.))
-    norm=TwoSlopeNorm(0,-limit,limit);cmap=plt.get_cmap('coolwarm')
-    for r in result['octahedra']:
+    norm=TwoSlopeNorm(0,-limit,limit)
+    base=plt.get_cmap('coolwarm')
+    cmap=LinearSegmentedColormap.from_list('tilt',[base(0.),'#999999',base(1.)])
+    for ax, panel in zip(axes[0], panels):
+        members = None if panel is None else set(panel['Ni_indices_1based'])
+        draw_rows = None
+        oxygen = result.get('interstitial_oxygen', [])
+        if panel and result.get('display'):
+            from lno_display import periodic_panel_rows, periodic_panel_oxygen
+            draw_rows = periodic_panel_rows(result, plane, panel)
+            oxygen = periodic_panel_oxygen(result, plane, panel)
+        _draw_projection_rows(ax, result, horizontal, angle_key, frame, cell,
+                              cmap, norm, members, draw_rows)
+        for marker in oxygen:
+            point = np.array(marker['fractional_position']) @ cell @ frame.T
+            ax.scatter(point[horizontal], point[2], marker='D', s=48,
+                       c='#19aa7a', edgecolors='#124c3d', linewidths=.8, zorder=6)
+            label = f'O{marker["O_index_1based"]}' + ('′' if marker.get('periodic_copy') else '')
+            ax.annotate(label, (point[horizontal], point[2]), xytext=(5, 3),
+                        textcoords='offset points', fontsize=7, color='#124c3d', zorder=7)
+        ax.set(xlabel=f'{plane[0]} (Å)')
+        title = f'NiO$_6$ · {plane}'
+        if panel:
+            start = panel['start_fraction']
+            end = (start+panel['width_fraction']) % 1.
+            depth_axis = slices['depth_fractional_axis']
+            interval = (f'{start:.3f}–{end:.3f}' if end > start else
+                        f'{start:.3f}–1 / 0–{end:.3f}')
+            title = f'{plane} · Slice {panel["slice"]}\n{depth_axis} fraction: {interval}'
+        ax.set_title(title,fontsize=11,pad=10)
+        ax.margins(x=.12,y=.04)
+        ax.set_aspect('equal', adjustable='box')
+    axes[0,0].set_ylabel('z (Å)')
+    if slices and slices['warning']:
+        fig.suptitle(slices['warning'], fontsize=9)
+    if result.get('display') or result.get('interstitial_oxygen'):
+        if result.get('interstitial_oxygen'):
+            from matplotlib.lines import Line2D
+            fig.legend(handles=[Line2D([], [], marker='D', color='none',
+                        markerfacecolor='#19aa7a', markeredgecolor='#124c3d',
+                        label='Interstitial O')], loc='lower center', frameon=False,
+                        bbox_to_anchor=(.5, .025), fontsize=9)
+        if result.get('display'):
+            fig.text(.5, .012, '′ periodic image', ha='center', fontsize=8, color='#555555')
+    suffix = '_slices' if slices else ''
+    fig.tight_layout(rect=(0, .065, 1, 1) if result.get('display') or result.get('interstitial_oxygen') else None)
+    fig.savefig(output/f'tilt_{plane}{suffix}.png',dpi=180)
+    fig.savefig(output/f'tilt_{plane}{suffix}.svg')
+    plt.close(fig)
+
+
+def _draw_projection_rows(ax, result, horizontal, angle_key, frame, cell, cmap, norm, members, draw_rows=None):
+    from matplotlib.colors import to_rgba
+    from matplotlib.patches import Polygon
+    from scipy.spatial import ConvexHull
+    for r in result['octahedra'] if draw_rows is None else draw_rows:
+        if members is not None and r['Ni_index_1based'] not in members:
+            continue
         p=np.array(r['fractional_position'])@cell@frame.T
         ori=r['orientation']
-        color=cmap(norm(ori['projected_cw_yz_deg'])) if ori else 'gray'
-        for bond in r['neighbors']:
-            v=np.array(bond['vector_cart_A'])@frame.T
-            ax.plot([p[1],p[1]+v[1]],[p[2],p[2]+v[2]],c=color,lw=1.3,alpha=.65)
-        ax.scatter(p[1],p[2],c=[color],s=28,zorder=3)
-        ax.annotate(str(r['Ni_index_1based']),(p[1],p[2]),xytext=(3,3),textcoords='offset points',fontsize=7)
-    ax.set(xlabel='y in layer frame (A)',ylabel='z = normal to ab (A)',
-           title='Ni-O bonds projected along +x\nCW-positive apical-axis tilt; labels = POSCAR Ni indices')
-    ax.set_aspect('equal');fig.colorbar(ScalarMappable(norm=norm,cmap=cmap),ax=ax,label='Projected CW tilt (deg)',shrink=.65)
-    fig.tight_layout();fig.savefig(output/'tilt_yz.png',dpi=180);fig.savefig(output/'tilt_yz.svg');plt.close(fig)
+        color=cmap(norm(ori[angle_key])) if ori else 'gray'
+        vectors=np.array([bond['vector_cart_A'] for bond in r['neighbors']]).reshape(-1,3) @ frame.T
+        if ori:
+            # The silhouette is the convex hull of the actual six oxygen
+            # projections, so distorted octahedra need not be ideal diamonds.
+            vertices=(vectors+p)[:,[horizontal,2]]
+            unique=np.unique(vertices,axis=0)
+            if len(unique)>=3 and np.linalg.matrix_rank(unique-unique[0])==2:
+                hull=ConvexHull(unique)
+                outline=Polygon(unique[hull.vertices],closed=True,
+                                facecolor=to_rgba(color,.12),edgecolor=color,
+                                linewidth=1.25,zorder=1)
+                gid = f"octahedron-{r['Ni_index_1based']}"
+                if 'display_image_shift' in r:
+                    gid += '-image-' + '_'.join(map(str, r['display_image_shift']))
+                outline.set_gid(gid)
+                ax.add_patch(outline)
+        for v in vectors:
+            ax.plot([p[horizontal],p[horizontal]+v[horizontal]],[p[2],p[2]+v[2]],
+                    c=color,lw=.95,alpha=.8,zorder=2)
+        ax.scatter(p[horizontal],p[2],c=[color],s=24,zorder=3)
+        ni_label = str(r['Ni_index_1based']) + ('′' if r.get('periodic_copy') else '')
+        ax.annotate(ni_label,(p[horizontal],p[2]),
+                    xytext=(4,3),textcoords='offset points',fontsize=7,zorder=4)
+        if ori:
+            projected=ori[angle_key]
+            displayed=0. if abs(projected)<.005 else projected
+            label=f"{displayed:.2f}°"
+        else:
+            label='N/A'
+        ax.annotate(label,(p[horizontal],p[2]),xytext=(0,-12),va='top',ha='center',
+                    textcoords='offset points',fontsize=8,zorder=4,
+                    bbox=dict(facecolor='white',edgecolor='none',alpha=.65,pad=.8))
 
 
 def export(result, output, plot=True):
@@ -318,7 +455,23 @@ def export(result, output, plot=True):
     write_csv(output/'bridges.csv',result['bridges'],['Ni_i','Ni_j','Ni_O_Ni_deg'])
     write_csv(output/'interlayer_pairs.csv',result['interlayer_pairs'],['Ni_i','Ni_j'])
     if plot:
-        plot_projection(result,output)
+        slice_plans = {}
+        for plane in ('yz','xz'):
+            plot_projection(result,output,plane)
+            slices = projection_slices(result, plane)
+            if slices:
+                if result.get('display'):
+                    from lno_display import periodic_panel_rows, periodic_panel_oxygen
+                    for panel in slices['slices']:
+                        panel['displayed_Ni_images'] = [
+                            {k: row[k] for k in ('Ni_index_1based', 'display_image_shift', 'fractional_position', 'periodic_copy')}
+                            for row in periodic_panel_rows(result, plane, panel)]
+                        panel['displayed_interstitial_O_images'] = periodic_panel_oxygen(result, plane, panel)
+                plot_projection(result,output,plane,slices=slices)
+                slice_plans[plane] = slices
+        if slice_plans:
+            (output/'projection_slices.json').write_text(
+                json.dumps(slice_plans,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
 
 def main():
@@ -332,6 +485,8 @@ def main():
     p.add_argument('--sign-threshold',type=float,default=.5)
     p.add_argument('--exclude-o',default='',help='Comma-separated 1-based oxygen indices explicitly excluded from NiO6 identification')
     p.add_argument('--no-plot',action='store_true')
+    p.add_argument('--display', choices=('auto','native','lno'), default='auto',
+                   help='auto: align La24Ni16 sqrt2 bilayers and complete periodic boundaries; native: original axes/origin')
     args=p.parse_args()
     if args.out.exists():
         p.error('Output directory already exists; choose a new --out')
@@ -339,9 +494,18 @@ def main():
         data=args.poscar.read_bytes()
         # ASE's VASP reader supports Direct/Cartesian, selective dynamics and scaling.
         atoms=read(io.StringIO(data.decode('utf-8-sig')),format='vasp')
+        from lno_display import is_sqrt2_lno, prepare_lno_display, oxygen_markers
+        display = None
+        if args.display == 'lno' or (args.display == 'auto' and is_sqrt2_lno(atoms)):
+            atoms, display = prepare_lno_display(atoms)
         result=analyze(atoms,azimuth=args.azimuth,cutoff=args.cutoff,search_radius=args.search_radius,
                        layer_tol=args.layer_tol,sign_threshold=args.sign_threshold,
                        excluded_oxygen=[int(x) for x in args.exclude_o.split(',') if x.strip()])
+        if display:
+            result['display'] = display
+        # The marker detector supports both 8-Ni unit cells and 16-Ni sqrt2
+        # cells; it must not depend on whether display axes were transformed.
+        result['interstitial_oxygen'], result['interstitial_identification'] = oxygen_markers(atoms, result)
         result['source']={'path':str(args.poscar.resolve()),'sha256':hashlib.sha256(data).hexdigest(),
                           'geometry_only':'POSCAR cannot establish electronic/ionic convergence, pressure, U or magnetism.'}
         export(result,args.out,not args.no_plot)

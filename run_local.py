@@ -12,6 +12,7 @@ def main():
     parser.add_argument('--azimuth',type=float)
     parser.add_argument('--out',type=Path)
     parser.add_argument('--demo',action='store_true')
+    parser.add_argument('--display', choices=('auto','native','lno'), default='auto')
     args=parser.parse_args()
     root=Path(__file__).resolve().parent
     if args.demo and args.poscar:
@@ -32,6 +33,7 @@ def main():
             parser.error('Pass the POSCAR path as an argument instead')
     out=args.out or root/'results'/('tilt_'+datetime.now().strftime('%Y%m%d_%H%M%S_%f'))
     cmd=[sys.executable,'-X','utf8',str(root/'ni_octahedra.py'),str(source.resolve()),'--out',str(out.resolve())]
+    cmd += ['--display', args.display]
     azimuth=0 if args.demo else args.azimuth
     if azimuth is not None:cmd += ['--azimuth',str(azimuth)]
     else:print('Automatic in-plane reference. For comparing conventional Amam cells, consider --azimuth 45.')

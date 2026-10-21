@@ -1,66 +1,6 @@
 {
-  "version": "1.0.1",
+  "version": "1.1.0",
   "files": [
-    {
-      "path": "README.md",
-      "bytes": 6003,
-      "sha256": "2f3b549e68a76237f65779a1775acc6fc2832db97fba49865819e6478c291645"
-    },
-    {
-      "path": "ni_octahedra.py",
-      "bytes": 19362,
-      "sha256": "67067c232481b6677bebd68c16ff6ad8227fec0bbefbd211b258d611150e0eb4"
-    },
-    {
-      "path": "run_local.py",
-      "bytes": 1879,
-      "sha256": "49863ed0f766a4132115aab37284ec2c4a756aa9265c7813827bf84d9554df0d"
-    },
-    {
-      "path": "test_ni_octahedra.py",
-      "bytes": 5194,
-      "sha256": "7abeaa8a0919ffaf1babacb2c484fec4a77c65a128b0a9a1fcdd3c4a918c1a07"
-    },
-    {
-      "path": "test_portability.py",
-      "bytes": 2324,
-      "sha256": "941186ef5eff2f5e0e0881922f94c3a25e781ab58355a86b02577460a72d3223"
-    },
-    {
-      "path": "requirements.txt",
-      "bytes": 58,
-      "sha256": "c96e8554f509c71ab2d3d0b814c980a14d54d7c0456d000699f6a789e0c0f3c0"
-    },
-    {
-      "path": "setup_windows.bat",
-      "bytes": 1128,
-      "sha256": "27aadfc8958f98849fd33ea6b7ebccd5eba0500ffae2d9e3e6eafc2e8a903666"
-    },
-    {
-      "path": "run_windows.bat",
-      "bytes": 373,
-      "sha256": "641108f88baab85aec892ca814dc99e3f3c486e197c30d6aaea22c368d880a24"
-    },
-    {
-      "path": "demo_windows.bat",
-      "bytes": 69,
-      "sha256": "0aa62294869f7984be65610cbd58b1e9a56c5d91c67c4fd4a17c11b43ee6603f"
-    },
-    {
-      "path": "docs/METHOD.md",
-      "bytes": 7475,
-      "sha256": "62e61d3e044e952df68b2a846215bde4238fa6ffe893d56fe6839382108319b8"
-    },
-    {
-      "path": "examples/POSCAR_rx8",
-      "bytes": 682,
-      "sha256": "d93599e832b561416969f970f63a873d405f6c5b34d44ddef923ce3622f9162d"
-    },
-    {
-      "path": ".gitignore",
-      "bytes": 58,
-      "sha256": "2879148d2ae41e6d4decde6c4a9cc4017ad69bf699c39b7dc846cda31a94d489"
-    },
     {
       "path": ".gitattributes",
       "bytes": 97,
@@ -70,6 +10,86 @@
       "path": ".github/workflows/windows-tests.yml",
       "bytes": 696,
       "sha256": "bc0fe7873ef91aea16304843c9570e796a0d2704b989108dbf781fad31c5493e"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 140,
+      "sha256": "5dd93b50be013f5f6dc971a518b70c988443776f1b35b631d69a1e12cfcdf2ed"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "bytes": 911,
+      "sha256": "2219adcb734358344a8f9daa739c5ce5289b37de3071e3f70a192f7b3a45c9a9"
+    },
+    {
+      "path": "README.md",
+      "bytes": 10187,
+      "sha256": "45993ac6ee3ba1923714f5c5a85992d5c7b058d021be4b1ce818a0354cbec29e"
+    },
+    {
+      "path": "demo_windows.bat",
+      "bytes": 69,
+      "sha256": "0aa62294869f7984be65610cbd58b1e9a56c5d91c67c4fd4a17c11b43ee6603f"
+    },
+    {
+      "path": "docs/METHOD.md",
+      "bytes": 7995,
+      "sha256": "6d828949adb817f4ce935879544de86917ded087e5d2ed8dfac38b361c8e12ca"
+    },
+    {
+      "path": "examples/POSCAR_rx8",
+      "bytes": 682,
+      "sha256": "d93599e832b561416969f970f63a873d405f6c5b34d44ddef923ce3622f9162d"
+    },
+    {
+      "path": "lno_display.py",
+      "bytes": 5880,
+      "sha256": "aa320b36763269515ff2235ee658a50417161d3bd116a92d8c104c69bcc657ad"
+    },
+    {
+      "path": "ni_octahedra.py",
+      "bytes": 28343,
+      "sha256": "7a514303898c427a07aad7f3470f39e4a920441a908eb2535f54830355816ec6"
+    },
+    {
+      "path": "requirements.txt",
+      "bytes": 58,
+      "sha256": "c96e8554f509c71ab2d3d0b814c980a14d54d7c0456d000699f6a789e0c0f3c0"
+    },
+    {
+      "path": "run_local.py",
+      "bytes": 2004,
+      "sha256": "b72924d7fe9ec32e8c45ee0d2d4dc160606ca1b25536ad27e363e5b76af0b287"
+    },
+    {
+      "path": "run_windows.bat",
+      "bytes": 373,
+      "sha256": "641108f88baab85aec892ca814dc99e3f3c486e197c30d6aaea22c368d880a24"
+    },
+    {
+      "path": "setup_windows.bat",
+      "bytes": 1128,
+      "sha256": "27aadfc8958f98849fd33ea6b7ebccd5eba0500ffae2d9e3e6eafc2e8a903666"
+    },
+    {
+      "path": "test_lno_display.py",
+      "bytes": 4551,
+      "sha256": "3d79e66c515358a0e7a826fe66cee7faab2d4d90fd58124689c4c0a908c3acdb"
+    },
+    {
+      "path": "test_ni_octahedra.py",
+      "bytes": 5194,
+      "sha256": "7abeaa8a0919ffaf1babacb2c484fec4a77c65a128b0a9a1fcdd3c4a918c1a07"
+    },
+    {
+      "path": "test_portability.py",
+      "bytes": 3407,
+      "sha256": "658bc5dfd67bd0cf79fecf27a17875455ef515da842adf5d0a82bc78de8d7434"
+    },
+    {
+      "path": "test_projection_slices.py",
+      "bytes": 3397,
+      "sha256": "81c3a74a3023ce9232b61ef05d06c3d08be8e055c1a1a5b8a8ea27a002a2d5bd"
     }
   ],
   "example": "Synthetic isolated NiO6, not a DFT result"
